@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, flash, redirect, url_for
+from flask import Flask, request, render_template, flash, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
@@ -111,7 +111,8 @@ def predict_video(video_path):
             return {
                 'prediction': CLASSES_LIST[predicted_label],
                 'confidence': confidence,
-                'success': True
+                'success': True,
+                'first_frame': frames_list[0]  # Return the first frame
             }
         else:
             return {
@@ -128,6 +129,10 @@ def predict_video(video_path):
 @app.route('/', methods=['GET'])
 def home():
     return render_template('index.html')
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -158,13 +163,21 @@ def predict():
         # Make prediction
         result = predict_video(filepath)
         
+        # Save the first frame as an image
+        if result['success']:
+            first_frame = (result['first_frame'] * 255).astype(np.uint8)
+            first_frame_path = os.path.join(app.config['UPLOAD_FOLDER'], 'first_frame.jpg')
+            cv2.imwrite(first_frame_path, first_frame)
+        
         # Clean up
         os.remove(filepath)
         
         if result['success']:
             prediction = result['prediction']
             confidence = result['confidence']
+            flash(f'File uploaded: {filename}')
             flash(f'Prediction: {prediction} (Confidence: {confidence:.2%})')
+            return render_template('result.html', filename='first_frame.jpg')
         else:
             flash(f'Error during prediction: {result.get("error", "Unknown error")}')
             

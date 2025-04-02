@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Violence Detection System</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .dropzone {
+            border: 4px dashed #d1d5db;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .dropzone.dragover {
+            border-color: #a0aec0;
+            background-color: #f7fafc;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
@@ -30,9 +42,9 @@
                 {% endif %}
             {% endwith %}
 
-            <form action="{{ url_for('predict') }}" method="post" enctype="multipart/form-data" class="space-y-4">
+            <form action="{{ url_for('predict') }}" method="post" enctype="multipart/form-data" class="space-y-4" id="upload-form">
                 <div class="flex items-center justify-center w-full">
-                    <label class="flex flex-col w-full h-32 border-4 border-dashed hover:bg-gray-100 hover:border-gray-300">
+                    <label class="dropzone" id="dropzone">
                         <div class="flex flex-col items-center justify-center pt-7">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-400 group-hover:text-gray-600"
                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,15 +52,21 @@
                                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
                             <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">
-                                Select a video file</p>
+                                Drag & Drop a video file or click to select</p>
                         </div>
                         <input type="file" name="video" class="opacity-0" accept=".mp4,.avi,.mov" required />
                     </label>
                 </div>
-                <button type="submit"
-                    class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Upload and Analyze
-                </button>
+                <div class="flex space-x-4">
+                    <button type="button" id="upload-button"
+                        class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Upload
+                    </button>
+                    <button type="submit"
+                        class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Analyze
+                    </button>
+                </div>
             </form>
 
             <div class="mt-4 text-sm text-gray-500">
@@ -57,5 +75,48 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = dropzone.querySelector('input[type="file"]');
+        const uploadButton = document.getElementById('upload-button');
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                dropzone.querySelector('p').textContent = files[0].name;
+            }
+        });
+
+        dropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                dropzone.querySelector('p').textContent = fileInput.files[0].name;
+            }
+        });
+
+        uploadButton.addEventListener('click', () => {
+            if (fileInput.files.length > 0) {
+                alert('File uploaded: ' + fileInput.files[0].name);
+            } else {
+                alert('No file selected');
+            }
+        });
+    </script>
 </body>
 </html>
